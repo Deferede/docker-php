@@ -1,0 +1,114 @@
+version: "3.2"
+
+# Список наших сервисов (контейнеров)
+services:
+    nginx:
+        # используем последний стабильный образ nginx
+        image: nginx:latest
+        container_name: nginx
+        # маршрутизируем порты
+        ports:
+            - "${HOST_MACHINE_UNSECURE_HOST_PORT}:80"
+            - "${HOST_MACHINE_SECURE_HOST_PORT}:443"
+        # монтируем директории, слева директории на основной машине, справа - куда они монтируются в контейнере
+        volumes:
+            - ./hosts:/etc/nginx/conf.d
+            - ./www:/var/www
+            - ./logs/nginx:/var/log/nginx
+        # nginx должен общаться с php контейнером
+        links:
+            - php
+        networks:
+            - app_network
+    php:
+        # у нас свой образ для PHP, указываем путь к нему и говорим что его надо собрать
+        build: ./images/php
+        container_name: php
+        # этот образ будет общаться с mysql
+        links:
+            - mysql
+        # монтируем директорию с проектами
+        volumes:
+            - ./www:/var/www
+        networks:
+            - app_network
+
+    memcached:
+        restart: always
+        image: memcached
+        networks:
+            - app_network
+
+    rabbit:
+        image: rabbitmq:3-management-alpine
+        container_name: rabbitmq
+        hostname: rabbit
+        ports:
+            - 5672:5672
+            - 15672:15672
+        volumes:
+            - ./storage/rabbit:/var/lib/rabbitmq/
+            - ./logs/rabbit:/var/log/rabbitmq
+        environment:
+                - RABBITMQ_ERLANG_COOKIE='mysecret'
+        networks:
+            - app_network
+
+    phpmyadmin:
+        image: phpmyadmin
+        container_name: phpmyadmin
+        restart: always
+        links:
+            - mysql
+        ports:
+            - 8081:80
+        environment:
+            PMA_HOST: mysql
+            PMA_ARBITRARY: 1
+        networks:
+            - app_network
+
+    mysql:
+        image: mariadb:latest
+        container_name: mariadb
+        ports:
+            - 3306:3306
+        restart: always
+        volumes:
+            - ./temp:/temp
+            - ./etc/mysql:/etc/mysql
+            - ./logs/mysql:/var/log/mysql
+            - ./storage/mysql/data:/var/lib/mysql
+            - ./storage/mysql/files:/var/lib/mysql-files
+        # задаем пароль для root пользователя
+        # заливку дампа сайта и создание пользователя для доступа к базе снаружи будем делать позже 
+        environment:
+            MYSQL_USER: ${MYSQL_USER}
+            MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+            MYSQL_ROOT_PASSWORD: root
+        networks:
+            - app_network
+
+    clickhouse:
+        restart: always
+        build:
+            context: .
+            dockerfile: ./images/ch/Dockerfile
+        ports:
+            - 8123:8123
+            - 9000:9000
+            - 9009:9009
+        volumes:
+            - ./storage/ch/log:/var/log/clickhouse-server
+            - ./storage/ch/lib:/var/lib/clickhouse
+        ulimits:
+            nproc: 65535
+            nofile:
+                soft: 262144
+                hard: 262144
+        networks:
+            - app_network
+
+networks:
+  app_network:
+    driver: bridge
