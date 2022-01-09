@@ -1,4 +1,5 @@
 www/*
+!www/hello.dev/
 !www/.gitkeep
 
 logs/mysql/*
