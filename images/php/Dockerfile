@@ -17,10 +17,13 @@ RUN apt-get update && apt-get install -y \
 	libonig-dev \
 	libzip-dev \
         libxpm-dev \
-	libmcrypt-dev
+	libmcrypt-dev \
+        libmemcached-dev
 RUN pecl install mcrypt-1.0.3
 RUN docker-php-ext-enable mcrypt
 RUN docker-php-ext-install -j$(nproc) iconv mbstring mysqli pdo_mysql zip sockets
+RUN pecl install memcached && docker-php-ext-enable memcached
+RUN pecl install memcache-4.0.5.2 && docker-php-ext-enable memcache
 
 RUN docker-php-ext-configure gd \
     --with-gd \
