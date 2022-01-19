@@ -18,12 +18,17 @@ RUN apt-get update && apt-get install -y \
 	libzip-dev \
         libxpm-dev \
 	libmcrypt-dev \
-        libmemcached-dev
-RUN pecl install mcrypt-1.0.3
-RUN docker-php-ext-enable mcrypt
-RUN docker-php-ext-install -j$(nproc) iconv mbstring mysqli pdo_mysql zip sockets
+        libmemcached-dev \
+        libssh-dev \
+	librabbitmq-dev
+
+RUN pecl install mcrypt-1.0.3 && docker-php-ext-enable mcrypt
+RUN pecl install amqp && docker-php-ext-enable amqp
+RUN docker-php-ext-install -j$(nproc) iconv mbstring mysqli pdo_mysql zip sockets sysvsem bcmath
 RUN pecl install memcached && docker-php-ext-enable memcached
 RUN pecl install memcache-4.0.5.2 && docker-php-ext-enable memcache
+RUN pecl install xdebug-2.6.1 && docker-php-ext-enable xdebug
+RUN pecl install mongodb && docker-php-ext-enable mongodb
 
 RUN docker-php-ext-configure gd \
     --with-gd \
@@ -40,7 +45,7 @@ RUN docker-php-ext-install gd
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 # Добавим свой php.ini, можем в нем определять свои значения конфига
-ADD php.ini /usr/local/etc/php/conf.d/40-custom.ini
+ADD php.ini /usr/local/etc/php/php.ini
 
 # Указываем рабочую директорию для PHP
 WORKDIR /var/www
