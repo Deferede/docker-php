@@ -30,6 +30,17 @@ services:
             - ./www:/var/www
         networks:
             - app_network
+
+    php74:
+        # у нас свой образ для PHP, указываем путь к нему и говорим что его надо собрать
+        build: ./images/php74
+        container_name: php74
+        restart: always
+        # монтируем директорию с проектами
+        volumes:
+            - ./www:/var/www
+        networks:
+            - app_network
     
     php8:
         # у нас свой образ для PHP, указываем путь к нему и говорим что его надо собрать

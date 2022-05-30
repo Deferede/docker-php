@@ -20,11 +20,13 @@ RUN apt-get update && apt-get install -y \
 	libmcrypt-dev \
         libmemcached-dev \
         libssh-dev \
-	librabbitmq-dev
+	librabbitmq-dev \
+	libpq-dev \
+        libxml2-dev
 
 RUN pecl install mcrypt-1.0.3 && docker-php-ext-enable mcrypt
 RUN pecl install amqp && docker-php-ext-enable amqp
-RUN docker-php-ext-install -j$(nproc) iconv mbstring mysqli pdo_mysql zip sockets sysvsem bcmath
+RUN docker-php-ext-install -j$(nproc) iconv mbstring mysqli pdo pdo_pgsql pgsql pdo_mysql zip sockets sysvsem bcmath soap
 RUN pecl install memcached && docker-php-ext-enable memcached
 RUN pecl install memcache-4.0.5.2 && docker-php-ext-enable memcache
 RUN pecl install xdebug-2.6.1 && docker-php-ext-enable xdebug
